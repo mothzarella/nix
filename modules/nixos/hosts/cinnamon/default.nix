@@ -17,7 +17,7 @@
 
 	  # Hardware
           hardware.common-cpu-intel
-          hardware.common-gpu-nvidia
+          hardware.common-gpu-nvidia-sync
 
 	  # Modules
           modules.storage

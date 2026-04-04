@@ -15,14 +15,32 @@
 
   # Users ----------------------------------------------------------------------
 
+  users.users.root.hashedPassword = "!";
+
   users.users.tar = {
     isNormalUser = true;
     extraGroups = ["wheel" "networkmanager" "video" "audio"];
+    initialPassword = "passwd";
+  };
+
+  environment.persistence."/persistent" = {
+    users.tar = {
+      directories = [
+        ".config"
+        ".ssh"
+        ".local/share"
+        ".local/state"
+      ];
+      files = [
+        ".gitconfig"
+      ];
+    };
   };
 
   # Niri -----------------------------------------------------------------------
 
   programs.niri.enable = true;
+  
   programs.uwsm = {
     enable = true;
     waylandCompositors.niri = {
@@ -30,6 +48,11 @@
       comment = "Niri scrollable-tiling Wayland compositor";
       binPath = "/run/current-system/sw/bin/niri";
     };
+  };
+
+  programs.xwayland = {
+    enable = true;
+    package = pkgs.xwayland-satellite;
   };
 
   security = {
@@ -50,7 +73,12 @@
 
   xdg.portal = {
     enable = true;
-    extraPortals = [pkgs.xdg-desktop-portal-gtk];
+    extraPortals = with pkgs; [
+      xdg-desktop-portal-gnome
+
+      # Fallback
+      xdg-desktop-portal-gtk
+    ];
   };
 
   features.storage = {

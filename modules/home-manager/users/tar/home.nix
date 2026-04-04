@@ -9,8 +9,9 @@
 
       vivaldi
 
-      claude-code
-      jetbrains.pycharm-community
+      neovim
+      gh
+      jetbrains.pycharm
     ];
   };
 
@@ -51,7 +52,7 @@
     input {
         keyboard {
             xkb {
-                layout "it"
+                layout "us"
             }
         }
         touchpad {

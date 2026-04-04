@@ -35,10 +35,7 @@
         disko.devices.disk = cfg.layout;
 
         boot.initrd.luks.devices = mkIf cfg.luks.enable {
-          cryptroot = {
-            device = cfg.luks.device;
-            crypttabExtraOpts = optionals cfg.luks.tpm2 ["tpm2-device=auto"];
-          };
+          cryptroot.crypttabExtraOpts = optionals cfg.luks.tpm2 ["tpm2-device=auto"];
         };
       };
     };
