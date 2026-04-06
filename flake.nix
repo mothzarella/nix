@@ -7,8 +7,12 @@
 
     flake-parts.url = "github:hercules-ci/flake-parts";
 
-    impermanence.url = "github:nix-community/impermanence";
+    # Systems
+    systems.url = "github:nix-systems/default-linux";
 
+    # Hardware
+    nixos-hardware.url = "github:nixos/nixos-hardware";
+    impermanence.url = "github:nix-community/impermanence";
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -18,8 +22,6 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    nixos-hardware.url = "github:nixos/nixos-hardware";
   };
 
   outputs = inputs @ {flake-parts, ...}:

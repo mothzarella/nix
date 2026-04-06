@@ -1,147 +1,129 @@
-{pkgs, ...}: {
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+{
+  config,
+  inputs,
+  withSystem,
+  ...
+}: let
+  hostName = "cinnamon";
+in {
+  flake = {
+    nixosConfigurations.${hostName} = withSystem "x86_64-linux" ({pkgs, ...}:
+      inputs.nixpkgs.lib.nixosSystem {
+        inherit pkgs;
+        modules = [config.flake.modules.nixos."hosts/${hostName}"];
+      });
 
-  boot.loader = {
-    systemd-boot.enable = true;
-    efi.canTouchEfiVariables = true;
-  };
+    modules.nixos."hosts/${hostName}" = {pkgs, ...}: {
+      imports = [
+        inputs.nixos-hardware.nixosModules.common-cpu-intel
+        inputs.nixos-hardware.nixosModules.common-gpu-nvidia-sync
 
-  networking = {
-    hostName = "cinnamon";
-    networkmanager.enable = true;
-  };
-
-  time.timeZone = "Europe/Rome";
-
-  # Users ----------------------------------------------------------------------
-
-  users.users.root.hashedPassword = "!";
-
-  users.users.tar = {
-    isNormalUser = true;
-    extraGroups = ["wheel" "networkmanager" "video" "audio"];
-    initialPassword = "passwd";
-  };
-
-  environment.persistence."/persistent" = {
-    users.tar = {
-      directories = [
-        ".config"
-        ".ssh"
-        ".local/share"
-        ".local/state"
+        config.flake.modules.nixos."users/tar" # User
+        config.flake.modules.nixos.storage # Disk
       ];
-      files = [
-        ".gitconfig"
+
+      # Enable experimental features
+      nix.settings.experimental-features = ["nix-command" "flakes"];
+
+      # Run unpatched dynamic binaries
+      programs.nix-ld.enable = true;
+
+      networking = {
+        inherit hostName;
+        networkmanager.enable = true;
+      };
+
+      boot.kernelPackages = pkgs.stable.linuxPackages_zen;
+      boot.loader = {
+        systemd-boot.enable = true;
+        efi.canTouchEfiVariables = true;
+      };
+
+      time.timeZone = "Europe/Rome";
+      i18n.defaultLocale = "en_US.UTF-8";
+
+      # Persistent -------------------------------------------------------------
+
+      environment.persistence."/persistent" = {
+        hideMounts = true;
+        directories = [
+          "/var/log"
+          "/var/lib/bluetooth"
+          "/var/lib/nixos"
+          "/var/lib/systemd/coredump"
+          "/etc/NetworkManager/system-connections"
+          {
+            directory = "/var/lib/colord";
+            user = "colord";
+            group = "colord";
+            mode = "u=rwx,g=rx,o=";
+          }
+        ];
+        files = [
+          "/etc/machine-id"
+          {
+            file = "/var/keys/secret_file";
+            parentDirectory = {mode = "u=rwx,g=,o=";};
+          }
+        ];
+      };
+
+      # Users ------------------------------------------------------------------
+
+      environment.systemPackages = with pkgs; [
+        vim # must have editor
+        gcc # GNU compiler
+        git # version control
+        openssl # secure communication
+
+        # TODO: to remove
+        fuzzel
+        neovim
       ];
-    };
-  };
 
-  # Niri -----------------------------------------------------------------------
+      users.users.root.hashedPassword = "!";
 
-  programs.niri.enable = true;
-  
-  programs.uwsm = {
-    enable = true;
-    waylandCompositors.niri = {
-      prettyName = "Niri";
-      comment = "Niri scrollable-tiling Wayland compositor";
-      binPath = "/run/current-system/sw/bin/niri";
-    };
-  };
+      # Session ----------------------------------------------------------------
 
-  programs.xwayland = {
-    enable = true;
-    package = pkgs.xwayland-satellite;
-  };
+      services.displayManager.gdm = {
+        enable = true;
+        wayland = true;
+      };
 
-  security = {
-    polkit.enable = true;
-    rtkit.enable = true;
-  };
+      programs.niri.enable = true;
 
-  services = {
-    dbus.enable = true;
-    gvfs.enable = true;
-  };
-
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    pulse.enable = true;
-  };
-
-  xdg.portal = {
-    enable = true;
-    extraPortals = with pkgs; [
-      xdg-desktop-portal-gnome
-
-      # Fallback
-      xdg-desktop-portal-gtk
-    ];
-  };
-
-  features.storage = {
-    disko = {
-      enable = true;
-
-      layout.main = {
-        device = "/dev/disk/by-id/nvme-BC901_NVMe_SK_hynix_512GB__4YC6T000310706R22";
-        type = "disk";
-        content = {
-          type = "gpt";
-          partitions = {
-            ESP = {
-              name = "ESP";
-              size = "1G";
-              type = "EF00";
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
-                mountOptions = ["fmask=0077" "dmask=0077"];
-              };
-            };
-            root = {
-              name = "root";
-              size = "100%";
-              content = {
-                type = "luks";
-                name = "cryptroot";
-                settings.allowDiscards = true;
-                content = {
-                  type = "btrfs";
-                  extraArgs = ["-f"];
-                  subvolumes = {
-                    "@root" = {
-                      mountpoint = "/";
-                      mountOptions = ["compress=zstd" "noatime"];
-                    };
-                    "@nix" = {
-                      mountpoint = "/nix";
-                      mountOptions = ["compress=zstd" "noatime"];
-                    };
-                    "@persistent" = {
-                      mountpoint = "/persistent";
-                      mountOptions = ["compress=zstd" "noatime"];
-                    };
-                    "@old_roots" = {};
-                  };
-                };
-              };
-            };
-          };
+      programs.uwsm = {
+        enable = true;
+        waylandCompositors.niri = {
+          prettyName = "Niri";
+          comment = "Niri scrollable-tiling Wayland compositor";
+          binPath = "/run/current-system/sw/bin/niri";
         };
       };
 
-      luks = {
+      programs.xwayland = {
         enable = true;
-        tpm2 = true;
+        package = pkgs.xwayland-satellite;
       };
+
+      security = {
+        polkit.enable = true;
+        rtkit.enable = true;
+      };
+
+      xdg.portal = {
+        enable = true;
+        extraPortals = with pkgs; [
+          xdg-desktop-portal-gnome
+
+          # Fallback
+          xdg-desktop-portal-gtk
+        ];
+      };
+
+      services.gnome.gnome-keyring.enable = true;
     };
 
-    impermanence.enable = true;
+    system.stateVersion = "25.11";
   };
-
-  system.stateVersion = "25.11";
 }

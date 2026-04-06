@@ -1,5 +1,5 @@
 {inputs, ...}: {
-  flake.nixosModules.disko = {
+  flake.modules.nixos.storage = {
     config,
     lib,
     ...
@@ -24,7 +24,6 @@
           device = mkOption {
             type = types.str;
             default = "/dev/disk/by-partlabel/root";
-            description = "Encrypted partition device path";
           };
 
           tpm2 = mkEnableOption "TPM2 auto-unlock via systemd-cryptenroll";
@@ -39,6 +38,4 @@
         };
       };
     };
-
-  flake.nixosModules.storage.imports = [inputs.self.nixosModules.disko];
 }

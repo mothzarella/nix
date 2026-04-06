@@ -4,5 +4,7 @@
       system = final.stdenv.hostPlatform.system;
       config.allowUnfree = true;
     };
+
+    junie = final.callPackage ../../pkgs/junie/default.nix {};
   };
 }

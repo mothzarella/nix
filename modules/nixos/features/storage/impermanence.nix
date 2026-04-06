@@ -1,5 +1,5 @@
 {inputs, ...}: {
-  flake.nixosModules.impermanence = {
+  flake.modules.nixos.storage = {
     config,
     lib,
     pkgs,
@@ -22,30 +22,18 @@
             if config.features.storage.disko.luks.enable
             then "/dev/mapper/cryptroot"
             else "/dev/disk/by-partlabel/root";
-          description = "BTRFS device mounted in initrd for wipe-root";
         };
 
         retentionDays = mkOption {
           type = types.int;
           default = 30;
-          description = "Days to retain old root snapshots before deletion";
-        };
-
-        directories = mkOption {
-          type = types.listOf (types.either types.str types.attrs);
-          default = [];
-          description = "Extra system directories to persist under /persistent";
-        };
-
-        files = mkOption {
-          type = types.listOf types.str;
-          default = [];
-          description = "Extra system files to persist under /persistent";
         };
       };
 
       config = mkIf cfg.enable {
         fileSystems."/persistent".neededForBoot = true;
+
+        programs.fuse.userAllowOther = true;
 
         boot.initrd.systemd.enable = mkDefault true;
         boot.initrd.systemd.storePaths = [pkgs.btrfs-progs pkgs.findutils];
@@ -85,21 +73,6 @@
             umount /btrfs_tmp
           '';
         };
-
-        environment.persistence."/persistent" = {
-          hideMounts = true;
-          directories =
-            [
-              "/var/log"
-              "/var/lib/nixos"
-              "/var/lib/systemd/coredump"
-              "/etc/NetworkManager/system-connections"
-            ]
-            ++ cfg.directories;
-          files = ["/etc/machine-id"] ++ cfg.files;
-        };
       };
     };
-
-  flake.nixosModules.storage.imports = [inputs.self.nixosModules.impermanence];
 }
