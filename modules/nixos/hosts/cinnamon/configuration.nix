@@ -10,16 +10,17 @@ in {
     nixosConfigurations.${hostName} = withSystem "x86_64-linux" ({pkgs, ...}:
       inputs.nixpkgs.lib.nixosSystem {
         inherit pkgs;
-        modules = [config.flake.modules.nixos."hosts/${hostName}"];
+        modules = [config.flake.nixosModules."hosts/${hostName}"];
       });
 
-    modules.nixos."hosts/${hostName}" = {pkgs, ...}: {
+    nixosModules."hosts/${hostName}" = {pkgs, ...}: {
       imports = [
         inputs.nixos-hardware.nixosModules.common-cpu-intel
         inputs.nixos-hardware.nixosModules.common-gpu-nvidia-sync
 
-        config.flake.modules.nixos."users/tar" # User
-        config.flake.modules.nixos.storage # Disk
+        config.flake.nixosModules."users/tar" # User
+        config.flake.nixosModules."hosts/cinnamon/hardware" # Hardware
+        config.flake.nixosModules.storage # Disk
       ];
 
       # Enable experimental features
@@ -122,8 +123,7 @@ in {
       };
 
       services.gnome.gnome-keyring.enable = true;
+      system.stateVersion = "25.11";
     };
-
-    system.stateVersion = "25.11";
   };
 }

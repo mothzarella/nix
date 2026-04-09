@@ -1,10 +1,10 @@
 {inputs, ...}: {
-  flake.overlays.default = final: _prev: {
+  flake.overlays.default = final: prev: {
+    additions = import ../../pkgs {pkgs = final;};
+
     stable = import inputs.nixpkgs-stable {
-      system = final.stdenv.hostPlatform.system;
+      inherit (final.stdenv.hostPlatform) system;
       config.allowUnfree = true;
     };
-
-    junie = final.callPackage ../../pkgs/junie/default.nix {};
   };
 }

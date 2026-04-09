@@ -1,5 +1,5 @@
 {inputs, ...}: {
-  flake.modules.nixos.storage = {
+  flake.nixosModules.storage = {
     config,
     lib,
     ...
@@ -10,7 +10,7 @@
       imports = [inputs.disko.nixosModules.disko];
 
       options.features.storage.disko = {
-        enable = mkEnableOption "disk layout management via disko";
+        enable = mkEnableOption "Whether to enable disk layout management via disko";
 
         layout = mkOption {
           type = types.attrsOf types.anything;
@@ -19,14 +19,14 @@
         };
 
         luks = {
-          enable = mkEnableOption "LUKS encryption";
+          enable = mkEnableOption "Whether to enable LUKS encryption";
 
           device = mkOption {
             type = types.str;
             default = "/dev/disk/by-partlabel/root";
           };
 
-          tpm2 = mkEnableOption "TPM2 auto-unlock via systemd-cryptenroll";
+          tpm2 = mkEnableOption "Whether to enable TPM2 auto-unlock via systemd-cryptenroll";
         };
       };
 

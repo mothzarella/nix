@@ -1,5 +1,5 @@
 {inputs, ...}: {
-  flake.modules.nixos.storage = {
+  flake.nixosModules.storage = {
     config,
     lib,
     pkgs,
@@ -14,7 +14,7 @@
       imports = [inputs.impermanence.nixosModules.impermanence];
 
       options.features.storage.impermanence = {
-        enable = mkEnableOption "wipe-on-boot via btrfs subvolume rotation";
+        enable = mkEnableOption "Whether to enable `wipe-on-boot` via btrfs subvolume rotation";
 
         btrfsDevice = mkOption {
           type = types.str;
@@ -33,11 +33,21 @@
       config = mkIf cfg.enable {
         fileSystems."/persistent".neededForBoot = true;
 
+        # Filesystem in Userspace
         programs.fuse.userAllowOther = true;
 
-        boot.initrd.systemd.enable = mkDefault true;
-        boot.initrd.systemd.storePaths = [pkgs.btrfs-progs pkgs.findutils];
+        # Delete all files in `/tmp` during boot
+        boot.tmp.cleanOnBoot = mkDefault true;
 
+        boot.initrd.systemd = {
+          enable = mkDefault true;
+          storePaths = with pkgs; [
+            btrfs-progs
+            findutils
+          ];
+        };
+
+        # Wipe on Root
         boot.initrd.systemd.services.wipe-root = {
           description = "Wipe root subvolume on boot";
           wantedBy = ["initrd.target"];

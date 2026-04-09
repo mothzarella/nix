@@ -4,6 +4,8 @@
   withSystem,
   ...
 }: {
+  # tar (Default) --------------------------------------------------------------
+
   flake.homeConfigurations.tar = withSystem "x86_64-linux" (
     {pkgs, ...}:
       inputs.home-manager.lib.homeManagerConfiguration {
@@ -11,9 +13,7 @@
         extraSpecialArgs = {inherit inputs;};
         modules = [
           config.flake.modules.homeManager."users/tar"
-          {
-            programs.home-manager.enable = true;
-          }
+          {programs.home-manager.enable = true;}
         ];
       }
   );

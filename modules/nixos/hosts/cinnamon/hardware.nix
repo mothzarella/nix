@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos."hosts/cinnamon" = {
+  flake.nixosModules."hosts/cinnamon/hardware" = {
     hardware.enableRedistributableFirmware = true;
 
     hardware.nvidia = {

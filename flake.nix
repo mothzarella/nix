@@ -25,5 +25,7 @@
   };
 
   outputs = inputs @ {flake-parts, ...}:
-    flake-parts.lib.mkFlake {inherit inputs;} {imports = [./modules];};
+    flake-parts.lib.mkFlake {inherit inputs;} {
+      imports = [./modules];
+    };
 }

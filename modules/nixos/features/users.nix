@@ -1,14 +1,15 @@
 {
   config,
+  self,
   inputs,
   ...
 }: {
-  flake.modules.nixos."users/tar" = {pkgs, ...}: let
-    name = "tar";
+  flake.nixosModules."users/tar" = {pkgs, ...}: let
+    username = "tar";
   in {
     imports = [inputs.home-manager.nixosModules.home-manager];
 
-    users.users.${name} = {
+    users.users.${username} = {
       isNormalUser = true;
       initialPassword = "passwd";
       # shell = pkgs.fish;
@@ -30,12 +31,16 @@
       useUserPackages = true;
       backupFileExtension = "backup";
 
-      users.${name} = {
-        imports = [config.flake.homeModules."users/${name}"];
+      users.${username} = {
+        imports = [
+          self.homeModules."users/${username}"
+        ];
 
         home.persistence."/persistent" = {
           directories = [
             "Downloads"
+            ".config/vivaldi"
+            ".pki"
             {
               directory = ".ssh";
               mode = "0700";
