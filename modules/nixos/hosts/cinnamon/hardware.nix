@@ -1,32 +1,66 @@
 {
-  flake.nixosModules."hosts/cinnamon/hardware" = {
-    hardware.enableRedistributableFirmware = true;
+  flake.nixosModules."hosts/cinnamon" = {pkgs, config, ...}: {
+    # Kernel
+    boot.kernelPackages = pkgs.stable.linuxPackages_zen; # Stable linux_zen
 
-    hardware.nvidia = {
-      open = true;
+    # Loader
+    boot.loader = {
+      systemd-boot.enable = true;
+      efi.canTouchEfiVariables = true;
+    };
 
+    # Firmware
+    hardware = {
+      enableRedistributableFirmware = true;
+      enableAllFirmware = true;
+    };
+
+    # CPU ----------------------------------------------------------------------
+
+    powerManagement.cpuFreqGovernor = "schedutil";
+    boot.kernelParams = ["intel_pstate=active"];
+
+    services = {
+      thermald.enable = true;
+      irqbalance.enable = true;
+    };
+
+    # GPU ----------------------------------------------------------------------
+
+    # OpenGL
+    hardware.graphics = {
+      enable = true;
+      enable32Bit = true;
+    };
+
+    # Nvidia
+    hardware.nvidia = let
+      cfg = config.hardware.nvidia.package;
+    in {
+      # Enable open source drivers if pkg supports it
+      open = cfg ? open && cfg ? firmware;
+
+      # Prime sync PCI
       prime = {
         sync.enable = true;
+        # lspci | grep -E "VGA|3D"
         intelBusId = "PCI:0:2:0";
         nvidiaBusId = "PCI:1:0:0";
       };
 
       powerManagement.enable = true;
+
+      # Kernel driver package
+      package = config.boot.kernelPackages.nvidiaPackages.latest;
     };
 
-    # Intel thermal daemon
-    services.thermald.enable = true;
-
-    # Power profiles: balanced/power-saver/performance
-    services.power-profiles-daemon.enable = true;
-
-    # Periodic TRIM — complements btrfs discard=async for NVMe health
-    services.fstrim.enable = true;
+    # Storage ------------------------------------------------------------------
 
     features.storage = {
+      impermanence.enable = true;
+
       disko = {
         enable = true;
-
         layout.main = {
           device = "/dev/disk/by-id/nvme-BC901_NVMe_SK_hynix_512GB__4YC6T000310706R22";
           type = "disk";
@@ -76,13 +110,12 @@
           };
         };
 
+        # Encryption
         luks = {
           enable = true;
           tpm2 = true;
         };
       };
-
-      impermanence.enable = true;
     };
   };
 }

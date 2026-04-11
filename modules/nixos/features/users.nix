@@ -1,11 +1,11 @@
 {
-  config,
   self,
   inputs,
   ...
 }: {
-  flake.nixosModules."users/tar" = {pkgs, ...}: let
+  flake.nixosModules."users/tar" = {pkgs, config, ...}: let
     username = "tar";
+    ifGroupExist = groups: builtins.filter (group: builtins.hasAttr group config.users.groups) groups;
   in {
     imports = [inputs.home-manager.nixosModules.home-manager];
 
@@ -13,7 +13,7 @@
       isNormalUser = true;
       initialPassword = "passwd";
       # shell = pkgs.fish;
-      extraGroups = [
+      extraGroups = ifGroupExist [
         "wheel"
 
         # extra groups
@@ -30,6 +30,7 @@
       useGlobalPkgs = true;
       useUserPackages = true;
       backupFileExtension = "backup";
+      extraSpecialArgs = {inherit inputs self;};
 
       users.${username} = {
         imports = [

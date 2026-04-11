@@ -1,9 +1,6 @@
-{
-  moduleWithSystem,
-  ...
-}: {
+{moduleWithSystem, ...}: {
   flake.homeModules."features/jetbrains" = moduleWithSystem (
-    perSystem@{config, ...}: {
+    perSystem @ {config, ...}: {
       home.packages = [
         config.packages.pycharm
       ];

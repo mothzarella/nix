@@ -14,13 +14,16 @@ in {
       });
 
     nixosModules."hosts/${hostName}" = {pkgs, ...}: {
-      imports = [
-        inputs.nixos-hardware.nixosModules.common-cpu-intel
-        inputs.nixos-hardware.nixosModules.common-gpu-nvidia-sync
+      imports = let
+        modules = config.flake.nixosModules;
+        hardware = inputs.nixos-hardware.nixosModules;
+      in [
+        hardware.common-pc-laptop-ssd
+        hardware.common-cpu-intel
+        hardware.common-gpu-nvidia-sync
 
-        config.flake.nixosModules."users/tar" # User
-        config.flake.nixosModules."hosts/cinnamon/hardware" # Hardware
-        config.flake.nixosModules.storage # Disk
+        modules."users/tar" # User
+        modules.storage # Disk
       ];
 
       # Enable experimental features
@@ -32,12 +35,6 @@ in {
       networking = {
         inherit hostName;
         networkmanager.enable = true;
-      };
-
-      boot.kernelPackages = pkgs.stable.linuxPackages_zen;
-      boot.loader = {
-        systemd-boot.enable = true;
-        efi.canTouchEfiVariables = true;
       };
 
       time.timeZone = "Europe/Rome";
@@ -76,12 +73,9 @@ in {
         gcc # GNU compiler
         git # version control
         openssl # secure communication
-
-        # TODO: to remove
-        fuzzel
-        neovim
       ];
 
+      # Disable root
       users.users.root.hashedPassword = "!";
 
       # Session ----------------------------------------------------------------
