@@ -5,8 +5,6 @@
     home.packages = with pkgs; [
       brightnessctl
       niri
-      swaybg
-      waybar
       fuzzel
       alacritty
     ];

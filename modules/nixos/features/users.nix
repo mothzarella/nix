@@ -33,28 +33,27 @@
       extraSpecialArgs = {inherit inputs self;};
 
       users.${username} = {
-        imports = [
-          self.homeModules."users/${username}"
-        ];
+        imports = [self.homeModules."users/${username}"];
 
         home.persistence."/persistent" = {
           directories = [
+            ".config/nix" # Nix flake config
+
+            ".pki" # Certificates NSS (Network Security Services)
+
+            {
+              directory = ".ssh"; # SSH Keys
+              mode = "0700";
+            }
+            {
+              directory = ".local/share/keyrings"; # Gnome passwd keyring
+              mode = "0700";
+            }
+
             "Downloads"
-            ".config/vivaldi"
-            ".pki"
-            {
-              directory = ".ssh";
-              mode = "0700";
-            }
-            {
-              directory = ".local/share/keyrings";
-              mode = "0700";
-            }
-            ".config/nix"
           ];
-          files = [
-            ".screenrc"
-          ];
+
+          files = [".screenrc"];
         };
       };
     };
