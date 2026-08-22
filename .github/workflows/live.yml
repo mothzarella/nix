@@ -1,0 +1,53 @@
+name: live
+
+on:
+  push:
+    tags:
+      - "live-*"
+  schedule:
+    - cron: "0 3 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: easimon/maximize-build-space@v10
+        with:
+          overprovision-lvm: true
+          remove-android: true
+          remove-dotnet: true
+          remove-codeql: true
+          remove-haskell: true
+          remove-docker-images: true
+
+      - uses: actions/checkout@v5
+
+      - uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            experimental-features = nix-command flakes pipe-operators
+            extra-substituters = https://nix-community.cachix.org https://cache.numtide.com
+            extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+
+      - name: Update flake.lock
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          nix flake update --commit-lock-file
+
+      - run: nix build .#nixosConfigurations.live.config.system.build.isoImage
+
+      - name: Push flake.lock
+        if: github.event_name != 'push'
+        run: git push origin HEAD:${{ github.ref_name }}
+
+      - if: startsWith(github.ref, 'refs/tags/')
+        run: gh release create "${{ github.ref_name }}" result/iso/*.iso --notes ""
+        env:
+          GH_TOKEN: ${{ github.token }}
