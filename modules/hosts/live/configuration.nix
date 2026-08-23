@@ -1,6 +1,3 @@
-# a host like any other: it lives in nixosConfigurations, goes through the same
-# modules/nixos.nix pipeline and ends up in the flake checks. it has no
-# facter.json because there is no hardware to scan
 {
   config,
   inputs,
@@ -32,8 +29,6 @@ in {
 
         flake=/iso/flake
 
-        # diskoConfigurations, not nixosConfigurations: only hosts with a disk
-        # layout can be installed, and it leaves this live image out of the list
         host=$(
           nix eval --raw "$flake#diskoConfigurations" \
             --apply 'cs: builtins.concatStringsSep "\n" (builtins.attrNames cs)' |
@@ -50,9 +45,6 @@ in {
 
         gum confirm "Erase $disk and install $host?" || exit 1
 
-        # the installed system reads its password from /persistent, which no
-        # activation script can create: without this the first boot has no
-        # account to log into
         extra=$(mktemp -d)
         trap 'rm -rf "$extra"' EXIT
         mkdir -p "$extra/passwords"
@@ -88,7 +80,7 @@ in {
     environment.systemPackages = [live pkgs.nixos-facter];
     environment.defaultPackages = lib.mkForce [];
 
-    # the flake sources, so evaluating an install needs no network
+    
     system.extraDependencies = builtins.attrValues inputs;
 
     nix.settings.http-connections = 128;

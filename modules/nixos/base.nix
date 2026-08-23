@@ -21,7 +21,7 @@
       settings.experimental-features = ["nix-command" "flakes" "pipe-operators"];
       settings.trusted-users = ["root" "@wheel"];
       settings.download-buffer-size = 1024 * 1024 * 1024;
-      settings.build-dir = "/var/tmp"; # https://github.com/NixOS/nixpkgs/issues/293114
+      settings.build-dir = "/nix/var/nix/builds"; # https://github.com/NixOS/nixpkgs/issues/293114
 
       settings.extra-substituters = [
         "https://nix-community.cachix.org"
