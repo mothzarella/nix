@@ -1,4 +1,6 @@
 {
+  description = "modular NixOS configuration";
+
   inputs = {
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
 
