@@ -1,0 +1,8 @@
+[kwin]
+Show Desktop=none,none,Show Desktop
+Switch to Previous Desktop=Meta+H,none,Switch to Previous Desktop
+Switch to Next Desktop=Meta+L,none,Switch to Next Desktop
+Switch to Desktop 1=Meta+1,none,Switch to Desktop 1
+Switch to Desktop 2=Meta+2,none,Switch to Desktop 2
+Switch to Desktop 3=Meta+3,none,Switch to Desktop 3
+Switch to Desktop 4=Meta+4,none,Switch to Desktop 4

@@ -1,5 +1,4 @@
 {
-  # https://github.com/nix-community/impermanence#btrfs-subvolumes
   flake.modules.nixos.btrfs-rollback.boot.initrd.systemd.services.rollback = {
     description = "Rollback BTRFS root subvolume to a pristine state on every boot";
     wantedBy = ["initrd.target"];

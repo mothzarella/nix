@@ -1,38 +1,47 @@
-{config, ...}: let
+{
+  config,
+  secret,
+  ...
+}: let
   inherit (config.flake.modules) nixos;
 in {
   flake.modules.nixos.tar = {pkgs, ...}: {
     imports = [nixos.preservation];
 
+    # -------------------------------------------------------------------- users
     users.users.tar = {
       isNormalUser = true;
       extraGroups = ["wheel" "networkmanager" "video" "input"];
       hashedPasswordFile = "/persistent/passwords/tar";
-      packages = [pkgs.brave-origin pkgs.claude-code];
+      packages = [
+        pkgs.claude-code
+        pkgs.neovim
+        pkgs.vesktop
+
+        (pkgs.jetbrains.pycharm.overrideAttrs (old: {
+          postInstall =
+            (old.postInstall or "")
+            + ''
+              substituteInPlace $out/pycharm/bin/pycharm64.vmoptions \
+                --replace-fail '-Dawt.toolkit.name=auto' '-Dawt.toolkit.name=XToolkit'
+            '';
+        }))
+      ];
     };
 
-    preservation.preserveAt."/persistent".users.tar.directories = [
-      {
-        directory = ".gnupg";
-        mode = "0700";
-      }
-      {
-        directory = ".ssh";
-        mode = "0700";
-      }
-      "Projects"
-      {
-        directory = ".claude";
-        mode = "0700";
-      }
-      ".config/BraveSoftware"
-      ".local/state"
-      {
-        directory = ".local/share/keyrings";
-        mode = "0700";
-      }
-    ];
-
-    preservation.preserveAt."/persistent".users.tar.files = [".claude.json"];
+    # ------------------------------------------------------------- preservation
+    preservation.preserveAt."/persistent".users.tar = {
+      directories = [
+        (secret ".gnupg")
+        (secret ".ssh")
+        "Projects"
+        (secret ".claude")
+        ".mozilla"
+        ".config/JetBrains"
+        ".local/state"
+        (secret ".local/share/keyrings")
+      ];
+      files = [".claude.json"];
+    };
   };
 }

@@ -11,7 +11,7 @@
       preserveAt."/persistent".directories = [
         "/etc/NetworkManager/system-connections"
         "/var/lib/systemd/coredump"
-        "/var/lib/systemd/nvpcr" # TPM2
+        "/var/lib/systemd/nvpcr"
         "/var/lib/systemd/timers"
         "/var/log"
         {

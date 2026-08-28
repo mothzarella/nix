@@ -7,7 +7,6 @@
       priority = 100;
     };
 
-    # https://docs.kernel.org/admin-guide/sysctl/vm.html
     boot.kernel.sysctl = {
       "vm.swappiness" = 180;
       "vm.watermark_boost_factor" = 0;

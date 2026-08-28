@@ -16,6 +16,7 @@ in {
 
     name = "live-${config.system.nixos.release}-${inputs.self.shortRev or "dirty"}-${pkgs.stdenv.hostPlatform.uname.processor}";
 
+    # ---------------------------------------------------------------- installer
     live = pkgs.writeShellApplication {
       name = "live";
       runtimeInputs = [
@@ -61,6 +62,7 @@ in {
       "${modulesPath}/installer/cd-dvd/installation-cd-minimal-new-kernel.nix"
     ];
 
+    # ---------------------------------------------------------------- iso-image
     image.baseName = lib.mkImageMediaOverride name;
 
     isoImage = {
@@ -77,23 +79,27 @@ in {
       ];
     };
 
+    # ----------------------------------------------------------------- packages
     environment.systemPackages = [live pkgs.nixos-facter];
     environment.defaultPackages = lib.mkForce [];
 
-    
+    # ---------------------------------------------------------------------- nix
     system.extraDependencies = builtins.attrValues inputs;
 
     nix.settings.http-connections = 128;
     nix.settings.max-substitution-jobs = 32;
 
-    users.mutableUsers = true; # passwordless users
+    # -------------------------------------------------------------------- users
+    users.mutableUsers = true;
 
-    zramSwap.enable = true; # evaluating a host takes more RAM than a small machine has
+    # --------------------------------------------------------------------- boot
+    zramSwap.enable = true;
 
-    boot.kernelParams = ["toram"]; # squashfs into RAM, stick can be unplugged
+    boot.kernelParams = ["toram"];
     boot.swraid.enable = lib.mkForce false;
     boot.supportedFilesystems.zfs = false;
 
+    # ------------------------------------------------------------------- system
     documentation.enable = lib.mkForce false;
     documentation.nixos.enable = lib.mkForce false;
 

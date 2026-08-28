@@ -4,10 +4,12 @@
     pkgs,
     ...
   }: {
+    # ----------------------------------------------------------------- packages
     environment.systemPackages = [pkgs.git];
 
     programs.command-not-found.enable = false;
 
+    # ---------------------------------------------------------------------- nix
     nix = {
       channel.enable = false;
       registry.nixpkgs.flake = inputs.nixpkgs;
@@ -21,7 +23,7 @@
       settings.experimental-features = ["nix-command" "flakes" "pipe-operators"];
       settings.trusted-users = ["root" "@wheel"];
       settings.download-buffer-size = 1024 * 1024 * 1024;
-      settings.build-dir = "/nix/var/nix/builds"; # https://github.com/NixOS/nixpkgs/issues/293114
+      settings.build-dir = "/nix/var/nix/builds";
 
       settings.extra-substituters = [
         "https://nix-community.cachix.org"
@@ -33,10 +35,12 @@
       ];
     };
 
+    # ------------------------------------------------------------------- locale
     time.timeZone = "Europe/Rome";
 
     i18n.defaultLocale = "en_US.UTF-8";
 
+    # ----------------------------------------------------------------- security
     security.sudo.enable = false;
     security.sudo-rs = {
       enable = true;
@@ -45,6 +49,7 @@
 
     users.mutableUsers = lib.mkDefault false;
 
+    # --------------------------------------------------------------------- boot
     boot = {
       initrd.systemd.enable = true;
 
@@ -52,6 +57,7 @@
       tmp.tmpfsHugeMemoryPages = "within_size";
     };
 
+    # ----------------------------------------------------------------- services
     services.openssh = {
       enable = true;
       openFirewall = false;

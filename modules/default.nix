@@ -16,7 +16,13 @@ in {
     |> lib.filesystem.listFilesRecursive
     |> builtins.filter (f: f != ./default.nix && lib.hasSuffix ".nix" (toString f));
 
-  _module.args = {inherit hostSystems;};
+  _module.args = {
+    inherit hostSystems;
+    secret = directory: {
+      inherit directory;
+      mode = "0700";
+    };
+  };
 
   systems =
     hostSystems
