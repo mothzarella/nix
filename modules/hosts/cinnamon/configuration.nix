@@ -50,7 +50,7 @@ in {
       users.tar.directories = [
         "Desktop"
         "Documents"
-        "Downloads"
+        # "Downloads"
         "Music"
         "Pictures"
         "Public"
