@@ -16,7 +16,7 @@ in {
     ];
 
     hardware.facter = {
-      # reportPath = ./facter.json;
+      reportPath = ./facter.json;
       detected.boot.graphics.kernelModules = lib.mkForce ["i915"];
     };
 

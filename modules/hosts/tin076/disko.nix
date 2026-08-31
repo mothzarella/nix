@@ -2,7 +2,7 @@
   mountOptions = ["compress=zstd" "noatime"];
 
   layout.disko.devices.disk.main = {
-    device = "/dev/disk/by-id/nvme-tin076";
+    device = "/dev/disk/by-id/nvme-KINGSTON_SNV2S1000G_50026B728358322A";
     type = "disk";
 
     content.type = "gpt";
