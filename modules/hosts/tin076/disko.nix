@@ -2,7 +2,7 @@
   mountOptions = ["compress=zstd" "noatime"];
 
   layout.disko.devices.disk.main = {
-    device = "/dev/disk/by-id/nvme-TIN076";
+    device = "/dev/disk/by-id/nvme-tin076";
     type = "disk";
 
     content.type = "gpt";
@@ -52,9 +52,9 @@ in {
   imports = [inputs.disko.flakeModules.disko];
 
   flake = {
-    diskoConfigurations.TIN076 = layout;
+    diskoConfigurations.tin076 = layout;
 
-    modules.nixos.TIN076 = {
+    modules.nixos.tin076 = {
       imports = [inputs.disko.nixosModules.disko];
       inherit (layout) disko;
     };

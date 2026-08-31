@@ -5,7 +5,7 @@
 }: let
   inherit (config.flake.modules) nixos;
 in {
-  flake.modules.nixos.TIN076 = {lib, ...}: {
+  flake.modules.nixos.tin076 = {lib, ...}: {
     imports = with nixos; [
       aeromoe
       btrfs-rollback
