@@ -8,7 +8,11 @@
 }: let
   inherit (config.flake.modules) nixos;
 in {
-  perSystem = {system, ...}: {
+  perSystem = {
+    system,
+    pkgs,
+    ...
+  }: {
     _module.args.pkgs = import inputs.nixpkgs {
       inherit system;
       config.allowUnfree = true;
@@ -20,6 +24,11 @@ in {
           })
       ];
     };
+
+    packages = lib.packagesFromDirectoryRecursive {
+      inherit (pkgs) callPackage;
+      directory = ../pkgs;
+    };
   };
 
   flake = {
@@ -29,7 +38,7 @@ in {
         name: system:
           withSystem system ({pkgs, ...}:
             inputs.nixpkgs.lib.nixosSystem {
-              specialArgs = {inherit inputs;};
+              specialArgs = {inherit inputs nixos;};
               modules = [
                 {
                   nixpkgs.pkgs = pkgs;

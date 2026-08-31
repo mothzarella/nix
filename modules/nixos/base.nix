@@ -5,7 +5,7 @@
     ...
   }: {
     # ----------------------------------------------------------------- packages
-    environment.systemPackages = [pkgs.git];
+    environment.systemPackages = with pkgs; [git nil];
 
     programs.command-not-found.enable = false;
 

@@ -13,19 +13,14 @@ in {
       isNormalUser = true;
       extraGroups = ["wheel" "networkmanager" "video" "input"];
       hashedPasswordFile = "/persistent/passwords/tar";
-      packages = [
-        pkgs.claude-code
-        pkgs.neovim
-        pkgs.vesktop
-
-        (pkgs.jetbrains.pycharm.overrideAttrs (old: {
-          postInstall =
-            (old.postInstall or "")
-            + ''
-              substituteInPlace $out/pycharm/bin/pycharm64.vmoptions \
-                --replace-fail '-Dawt.toolkit.name=auto' '-Dawt.toolkit.name=XToolkit'
-            '';
-        }))
+      packages = with pkgs; [
+        fastfetch
+        claude-code
+        neovim
+        vesktop
+        tmux
+        jetbrains.pycharm
+        zed-editor
       ];
     };
 
@@ -34,12 +29,13 @@ in {
       directories = [
         (secret ".gnupg")
         (secret ".ssh")
-        "Projects"
         (secret ".claude")
-        ".mozilla"
-        ".config/JetBrains"
-        ".local/state"
         (secret ".local/share/keyrings")
+        "Projects"
+        "Desktop"
+        ".config/mozilla"
+        ".local/share/mozilla"
+        ".local/state"
       ];
       files = [".claude.json"];
     };

@@ -7,16 +7,19 @@
 in {
   flake.modules.nixos.cinnamon = {lib, ...}: {
     imports = with nixos; [
-      aeroshell
+      aeromoe
       btrfs-rollback
-      networking
       performance
       preservation
       secure-boot
       tar
     ];
 
-    # ------------------------------------------------------------------ session
+    hardware.facter = {
+      reportPath = ./facter.json;
+      detected.boot.graphics.kernelModules = lib.mkForce ["i915"];
+    };
+
     services.displayManager = {
       sddm = {
         enable = true;
@@ -28,13 +31,9 @@ in {
       };
     };
 
-    environment.etc."aeroshell/wallpaper".source = ./wallpaper.webp;
-
-    # ----------------------------------------------------------------- hardware
-    hardware.facter = {
-      reportPath = ./facter.json;
-      detected.boot.graphics.kernelModules = lib.mkForce ["i915"];
-    };
+    # -------------------------------------------------------------------- theme
+    # 1739/52865, exposed by i2c as VEN_06CB:00.
+    kconfig.kcminputrc.Libinput."1739"."52865"."VEN_06CB:00 06CB:CE81 Touchpad".NaturalScroll = true;
 
     # ------------------------------------------------------------- preservation
     preservation.preserveAt."/persistent" = {

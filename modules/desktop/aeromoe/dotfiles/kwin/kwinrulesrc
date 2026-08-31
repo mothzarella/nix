@@ -1,0 +1,22 @@
+# https://gitgud.io/aeroshell/uac-polkit-agent/-/blob/master/add_rule.sh
+# https://invent.kde.org/plasma/kwin/-/blob/master/src/rules.h
+
+[General][$i]
+count=2
+rules=force-ssd,no-minimize-polkit
+
+[force-ssd][$i]
+Description=Force server-side decorations on all windows
+Enabled=true
+wmclassmatch=0
+noborder=false
+noborderrule=2
+
+[no-minimize-polkit][$i]
+Description=Keep the UAC authentication dialog off the taskbar
+Enabled=true
+clientmachine=localhost
+minimize=false
+minimizerule=2
+wmclass=(polkit-kde-authentication-agent-1)|(uac-polkit-manager)|(org.kde.polkit-kde-authentication-agent-1)
+wmclassmatch=3
