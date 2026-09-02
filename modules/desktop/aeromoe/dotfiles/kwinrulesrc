@@ -2,8 +2,26 @@
 # https://invent.kde.org/plasma/kwin/-/blob/master/src/rules.h
 
 [General][$i]
-count=2
-rules=force-ssd,no-minimize-polkit
+count=3
+rules=capture-bridge,force-ssd,no-minimize-polkit
+
+[capture-bridge][$i]
+Description=Hide the xwayland capture bridge
+Enabled=true
+wmclass=xwaylandvideobridge
+wmclassmatch=2
+noborder=true
+noborderrule=2
+acceptfocus=false
+acceptfocusrule=2
+below=true
+belowrule=2
+skippager=true
+skippagerrule=2
+skipswitcher=true
+skipswitcherrule=2
+skiptaskbar=true
+skiptaskbarrule=2
 
 [force-ssd][$i]
 Description=Force server-side decorations on all windows

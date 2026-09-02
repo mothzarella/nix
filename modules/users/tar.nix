@@ -1,13 +1,5 @@
-{
-  config,
-  secret,
-  ...
-}: let
-  inherit (config.flake.modules) nixos;
-in {
+{secret, ...}: {
   flake.modules.nixos.tar = {pkgs, ...}: {
-    imports = [nixos.preservation];
-
     # -------------------------------------------------------------------- users
     users.users.tar = {
       isNormalUser = true;
@@ -17,11 +9,16 @@ in {
         fastfetch
         claude-code
         neovim
+        llm-agents.junie
         vesktop
         tmux
-        jetbrains.pycharm
         zed-editor
       ];
+    };
+
+    services.displayManager.autoLogin = {
+      enable = true;
+      user = "tar";
     };
 
     # ------------------------------------------------------------- preservation
@@ -30,12 +27,25 @@ in {
         (secret ".gnupg")
         (secret ".ssh")
         (secret ".claude")
+        (secret ".junie")
         (secret ".local/share/keyrings")
+
         "Projects"
         "Desktop"
+        "Documents"
+        "Music"
+        "Pictures"
+        "Public"
+        "Templates"
+        "Videos"
+
+        ".local/state"
+
         ".config/mozilla"
         ".local/share/mozilla"
-        ".local/state"
+        ".config/vesktop"
+        ".config/zed"
+        ".local/share/zed"
       ];
       files = [".claude.json"];
     };

@@ -6,16 +6,11 @@ in {
       aeromoe
     ];
 
-    # ------------------------------------------------------------------ session
-    services.displayManager = {
-      sddm = {
-        enable = true;
-        wayland.enable = true;
-      };
-      autoLogin = {
-        enable = true;
-        user = "test";
-      };
+    theme.wallpaper = ./wallpaper.webp;
+
+    services.displayManager.autoLogin = {
+      enable = true;
+      user = "test";
     };
 
     system.stateVersion = "26.05";

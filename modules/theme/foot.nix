@@ -31,8 +31,8 @@
             selection-foreground = colors.base05.hex;
             urls = colors.base0D.hex;
           }
-          // range "regular" (lib.take 8 ansi)
-          // range "bright" (lib.drop 8 ansi);
+          // (ansi |> lib.take 8 |> range "regular")
+          // (ansi |> lib.drop 8 |> range "bright");
       };
     };
   };

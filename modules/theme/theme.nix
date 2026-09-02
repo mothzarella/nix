@@ -1,6 +1,4 @@
-{config, ...}: let
-  inherit (config.flake.modules) nixos;
-in {
+{
   flake.modules.nixos.theme = {
     config,
     lib,
@@ -17,15 +15,13 @@ in {
       |> builtins.listToAttrs;
 
     mkColor = value: let
-      hex = value |> lib.removePrefix "#" |> lib.toLower;
-      channels =
-        [0 2 4]
-        |> map (
-          offset:
-            builtins.substring offset 2 hex
-            |> lib.stringToCharacters
-            |> lib.foldl (accumulator: digit: accumulator * 16 + digits.${digit}) 0
-        );
+      hex = lib.toLower (lib.removePrefix "#" value);
+      channels = map (
+        offset:
+          builtins.substring offset 2 hex
+          |> lib.stringToCharacters
+          |> lib.foldl (accumulator: digit: accumulator * 16 + digits.${digit}) 0
+      ) [0 2 4];
       join = separator: lib.concatMapStringsSep separator toString channels;
     in {
       inherit hex;
@@ -59,8 +55,6 @@ in {
         default = null;
       };
   in {
-    imports = [nixos.kconfig];
-
     options.theme = {
       enable = lib.mkEnableOption "theming";
 
@@ -113,6 +107,8 @@ in {
         description = "Window opacity, where supported.";
       };
 
+      wallpaper = nullable types.path;
+
       packages = mkOption {
         type = types.attrsOf types.package;
         default = {};
@@ -146,7 +142,7 @@ in {
       }
 
       (lib.mkIf cfg.enable {
-        fonts.packages = with cfg.fonts; lib.unique [sansSerif.package monospace.package emoji.package];
+        fonts.packages = lib.unique (with cfg.fonts; [sansSerif.package monospace.package emoji.package]);
 
         environment = {
           systemPackages = [cfg.cursor.package cfg.icons.package] |> lib.filter (package: package != null);

@@ -1,15 +1,6 @@
-{
-  config,
-  inputs,
-  ...
-}: let
-  inherit (config.flake.modules) nixos;
-in {
+{inputs, ...}: {
   flake.modules.nixos.secure-boot = {pkgs, ...}: {
-    imports = [
-      inputs.lanzaboote.nixosModules.lanzaboote
-      nixos.preservation
-    ];
+    imports = [inputs.lanzaboote.nixosModules.lanzaboote];
 
     environment.systemPackages = [pkgs.sbctl];
 

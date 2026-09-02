@@ -17,6 +17,7 @@ in {
       inherit system;
       config.allowUnfree = true;
       overlays = [
+        inputs.llm-agents.overlays.shared-nixpkgs
         (final: _prev:
           lib.packagesFromDirectoryRecursive {
             inherit (final) callPackage;

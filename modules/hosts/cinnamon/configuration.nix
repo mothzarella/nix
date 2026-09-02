@@ -1,8 +1,4 @@
-{
-  config,
-  secret,
-  ...
-}: let
+{config, ...}: let
   inherit (config.flake.modules) nixos;
 in {
   flake.modules.nixos.cinnamon = {lib, ...}: {
@@ -15,49 +11,18 @@ in {
       tar
     ];
 
+    theme.wallpaper = ./wallpaper.webp;
+
     hardware.facter = {
       reportPath = ./facter.json;
       detected.boot.graphics.kernelModules = lib.mkForce ["i915"];
     };
 
-    services.displayManager = {
-      sddm = {
-        enable = true;
-        wayland.enable = true;
-      };
-      autoLogin = {
-        enable = true;
-        user = "tar";
-      };
-    };
-
-    # -------------------------------------------------------------------- theme
     # 1739/52865, exposed by i2c as VEN_06CB:00.
-    kconfig.kcminputrc.Libinput."1739"."52865"."VEN_06CB:00 06CB:CE81 Touchpad".NaturalScroll = true;
-
-    # ------------------------------------------------------------- preservation
-    preservation.preserveAt."/persistent" = {
-      directories = [
-        "/var/lib/AccountsService"
-        "/var/lib/power-profiles-daemon"
-        "/var/lib/systemd/backlight"
-        "/var/lib/systemd/rfkill"
-        "/var/lib/upower"
-        (secret "/var/lib/bluetooth")
-        (secret "/var/lib/iwd")
-      ];
-
-      users.tar.directories = [
-        "Desktop"
-        "Documents"
-        # "Downloads"
-        "Music"
-        "Pictures"
-        "Public"
-        "Templates"
-        "Videos"
-      ];
-    };
+    environment.etc."xdg/kcminputrc".text = lib.mkAfter ''
+      [Libinput][1739][52865][VEN_06CB:00 06CB:CE81 Touchpad]
+      NaturalScroll=true
+    '';
 
     system.stateVersion = "26.11";
   };

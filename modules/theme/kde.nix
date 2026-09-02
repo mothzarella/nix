@@ -6,7 +6,6 @@
   }: let
     cfg = config.theme;
     inherit (config.lib.theme) colors;
-    inherit (config.lib.kconfig) immutable;
 
     palette = {
       BackgroundNormal = colors.base00.rgb;
@@ -37,9 +36,14 @@
     desktopFont = qtFont cfg.fonts.sansSerif.name cfg.fonts.sizes.desktop;
   in {
     config = lib.mkIf cfg.enable {
-      kconfig = {
-        kdeglobals = lib.mkMerge [
-          {
+      environment.etc = {
+        "xdg/kcminputrc".text = lib.optionalString (cfg.cursor.name != null) ''
+          [Mouse]
+          cursorTheme[$i]=${cfg.cursor.name}
+          cursorSize[$i]=${toString cfg.cursor.size}
+        '';
+
+        "xdg/kdeglobals".text = lib.generators.toINI {} ({
             General = {
               font = qtFont cfg.fonts.sansSerif.name cfg.fonts.sizes.applications;
               fixed = qtFont cfg.fonts.monospace.name cfg.fonts.sizes.terminal;
@@ -59,16 +63,7 @@
             "Colors:Complementary" = palette;
             "Colors:Selection" = selection;
           }
-
-          (lib.mkIf (cfg.icons.name != null) {Icons.Theme = cfg.icons.name;})
-        ];
-
-        kcminputrc = lib.mkIf (cfg.cursor.name != null) {
-          Mouse = {
-            cursorTheme = immutable cfg.cursor.name;
-            cursorSize = immutable cfg.cursor.size;
-          };
-        };
+          // lib.optionalAttrs (cfg.icons.name != null) {Icons.Theme = cfg.icons.name;});
       };
     };
   };

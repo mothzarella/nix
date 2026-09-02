@@ -5,21 +5,16 @@
     lib,
     ...
   }: let
-    run = pkgs.writeShellScript "aeromoe-run" ''
-      exec ${lib.getExe' pkgs.systemd "systemd-run"} \
-        --user \
-        --machine=${config.services.displayManager.autoLogin.user}@.host \
-        --collect --quiet --working-directory=${config.users.users.${config.services.displayManager.autoLogin.user}.home} -- "$@"
-    '';
+    systemctl = lib.getExe' pkgs.systemd "systemctl";
 
-    startup = pkgs.writeShellScript "aeromoe-startup" ''
-      export QT_STYLE_OVERRIDE=kvantum # dropped for kwin itself, wanted by its children
-
+    startup = pkgs.writeShellScript "aeromoe-session" ''
+      export QT_STYLE_OVERRIDE=kvantum
+      ${systemctl} --user import-environment DESKTOP_SESSION XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE XDG_RUNTIME_DIR WAYLAND_DISPLAY DISPLAY
+      ${systemctl} --user start aeromoe-session.target
+      ${systemctl} --user try-restart xdg-desktop-portal.service plasma-xdg-desktop-portal-kde.service
       USE_UAC_AGENT=1 ${pkgs.aero-uac-polkit-agent}/libexec/uac-polkit-agent &
-
       ${lib.getExe (config.theme.packages.aero-bar or pkgs.aero-bar)} &
-
-      exec ${lib.getExe pkgs.wbg} /etc/aeromoe/wallpaper
+      exec ${lib.getExe pkgs.wbg} ${config.theme.wallpaper}
     '';
 
     shell = pkgs.writeShellScriptBin "aeromoe" ''
@@ -29,24 +24,64 @@
 
       ${lib.getExe' pkgs.coreutils "install"} -Dm600 /etc/xdg/kglobalshortcutsrc "$HOME/.config/kglobalshortcutsrc"
       ${lib.getExe' pkgs.kdePackages.kservice "kbuildsycoca6"} --noincremental
-
-      # QT_QUICK_CONTROLS_STYLE -- its QML then dies on `import kvantum`.
-      exec ${lib.getExe' pkgs.coreutils "env"} -u QT_STYLE_OVERRIDE ${pkgs.kdePackages.kwin}/bin/kwin_wayland_wrapper --xwayland --no-lockscreen --no-kactivities -- ${startup}
+      ${lib.getExe' pkgs.coreutils "env"} -u QT_STYLE_OVERRIDE ${pkgs.kdePackages.kwin}/bin/kwin_wayland_wrapper --xwayland --no-lockscreen --no-kactivities -- ${startup}
+      ${systemctl} --user stop aeromoe-session.target
     '';
 
-    session = (pkgs.writeTextDir "share/wayland-sessions/aeromoe.desktop" ''
-      [Desktop Entry]
-      Name=AeroMoe
-      Comment=KWin-based AeroMoe desktop
-      Exec=${shell}/bin/aeromoe
-      Type=Application
-      DesktopNames=KDE
-    '').overrideAttrs {passthru.providedSessions = ["aeromoe"];};
+    session =
+      (pkgs.writeTextDir "share/wayland-sessions/aeromoe.desktop" ''
+        [Desktop Entry]
+        Name=AeroMoe
+        Comment=KWin-based AeroMoe desktop
+        Exec=${lib.getExe shell}
+        Type=Application
+        DesktopNames=KDE
+      '')
+      .overrideAttrs {passthru.providedSessions = ["aeromoe"];};
+
+    inherit (config.services.displayManager.autoLogin) user;
+    run = command: "${lib.getExe' pkgs.systemd "systemd-run"} --user --machine=${user}@.host --collect --quiet --working-directory=${config.users.users.${user}.home} -- ${command}";
   in {
     imports = [./..];
 
     programs.xwayland.enable = true;
     security.polkit.enable = true;
+
+    # ------------------------------------------------------------------ session
+    systemd.user = {
+      targets.aeromoe-session = {
+        description = "AeroMoe session";
+        bindsTo = ["graphical-session.target"];
+        before = ["graphical-session.target"];
+        wants = ["graphical-session-pre.target"];
+        after = ["graphical-session-pre.target"];
+      };
+
+      services = {
+        xwaylandvideobridge = {
+          description = "Screencast bridge for XWayland clients";
+          partOf = ["aeromoe-session.target"];
+          wantedBy = ["aeromoe-session.target"];
+          serviceConfig = {
+            ExecStart = lib.getExe pkgs.xwaylandvideobridge;
+            Slice = "session.slice";
+            Restart = "on-failure";
+          };
+        };
+
+        plasma-xdg-desktop-portal-kde = {
+          overrideStrategy = "asDropin";
+          serviceConfig.UnsetEnvironment = "QT_STYLE_OVERRIDE";
+        };
+      };
+    };
+
+    # ------------------------------------------------------------------- portal
+    xdg.portal = {
+      enable = true;
+      extraPortals = [pkgs.kdePackages.xdg-desktop-portal-kde];
+      config.common.default = ["kde"];
+    };
 
     # -------------------------------------------------------------------- theme
     theme = {
@@ -83,7 +118,7 @@
       };
 
       icons = {
-        package = lib.mkDefault (pkgs.papirus-icon-theme.override {color = "white";});
+        package = pkgs.papirus-icon-theme.override {color = "white";};
         name = "Papirus-Dark";
       };
     };
@@ -100,6 +135,7 @@
     environment = {
       systemPackages = with pkgs; [
         kdePackages.kwin
+        kdePackages.kde-cli-tools
         aero-kwin-smod
         aero-kwin-components
         aero-uac-polkit-agent
@@ -111,6 +147,7 @@
       pathsToLink = ["/share/smod" "/share/kwin" "/share/aeroshell" "/share/Kvantum"];
 
       sessionVariables = {
+        KDE_SESSION_VERSION = "6";
         QT_STYLE_OVERRIDE = "kvantum";
         QT_PLUGIN_PATH = [
           "${pkgs.aero-kwin-smod}/lib/qt-6/plugins"
@@ -118,102 +155,37 @@
           "${pkgs.qt6Packages.qtstyleplugin-kvantum}/lib/qt-6/plugins"
         ];
 
-        # server-side decoration
-        GDK_BACKEND = "x11";
         GTK_CSD = "0";
-        MOZ_ENABLE_WAYLAND = "0";
+        MOZ_ENABLE_WAYLAND = "1";
+        NIXOS_OZONE_WL = "1";
+        ELECTRON_OZONE_PLATFORM_HINT = "auto";
       };
 
       etc."xdg/Kvantum/kvantum.kvconfig".text = lib.generators.toINI {} {General.theme = "Windows7Aero";};
-      etc."xdg/kwinrulesrc".source = ./dotfiles/kwin/kwinrulesrc;
-      etc."xdg/kglobalshortcutsrc".source = ./dotfiles/kwin/kglobalshortcutsrc;
-      etc."aeromoe/wallpaper".source = ../../hosts + "/${config.networking.hostName}/wallpaper.webp";
-    };
-
-    # -------------------------------------------------------------------- smod
-    # https://gitgud.io/aeroshell/smod
-    kconfig.smodrc.Windeco = {
-      DecorationTheme = "Aero";
-      EnableShadow = true;
-      HideIcon = true;
-    };
-
-    # --------------------------------------------------------------------- kwin
-    # https://invent.kde.org/plasma/kwin/-/tree/master/src/plugins
-    kconfig.kwinrc = {
-      "org.kde.kdecoration2".library = "org.smod.smod";
-
-      Windows.RollOverDesktops = true;
-
-      Desktops = {
-        Number = 9;
-        Rows = 3;
+      etc."xdg/kwinrc".source = ./dotfiles/kwinrc;
+      etc."xdg/kwinrulesrc".source = ./dotfiles/kwinrulesrc;
+      etc."xdg/kglobalshortcutsrc".text = lib.generators.toINI {} {
+        kwin =
+          {
+            "Show Desktop" = "none,none,Show Desktop";
+            "Switch One Desktop to the Left" = "Meta+H,none,Switch One Desktop to the Left";
+            "Switch One Desktop Down" = "Meta+J,none,Switch One Desktop Down";
+            "Switch One Desktop Up" = "Meta+K,none,Switch One Desktop Up";
+            "Switch One Desktop to the Right" = "Meta+L,none,Switch One Desktop to the Right";
+          }
+          // (lib.range 1 9
+            |> map (n: {
+              name = "Switch to Desktop ${toString n}";
+              value = "Meta+${toString n},none,Switch to Desktop ${toString n}";
+            })
+            |> lib.listToAttrs);
       };
-
-      Outline.QmlPath = "aeroshell/outline/plasma/outline.qml";
-
-      TabBox = {
-        ShowDesktopMode = 1;
-        LayoutName = "thumbnail_aero";
-      };
-
-      TabBoxAlternative = {
-        ShowDesktopMode = 1;
-        LayoutName = "flip3d";
-      };
-
-      Plugins = {
-        aeroglassblurEnabled = true;
-        aeroglideEnabled = true;
-        "aeroshell-thumbnailsEnabled" = true;
-        dimscreenaeroEnabled = true;
-        fadingpopupsaeroEnabled = true;
-        launchfeedbackEnabled = true;
-        smodglowEnabled = true;
-        smodsnapEnabled = true;
-        squashaeroEnabled = true;
-
-        smodpeekeffectEnabled = false;
-        smodpeekscriptEnabled = false;
-
-        blurEnabled = false;
-        contrastEnabled = false;
-        kscreenEnabled = false;
-        kwin4_effect_fadeEnabled = false;
-        kwin4_effect_scaleEnabled = false;
-        kwin4_effect_squashEnabled = false;
-        magiclampEnabled = false;
-        outputlocatorEnabled = false;
-        overviewEnabled = false;
-        slidingpopupsEnabled = false;
-        tileseditorEnabled = false;
-        windowviewEnabled = false;
-      };
-
-      "Effect-aeroglassblur" = {
-        AeroHue = 202;
-        AeroSaturation = 39;
-        AeroBrightness = 35;
-        AeroIntensity = 140;
-
-        BlurDocks = true;
-        BlurMatching = true;
-        BlurMenus = true;
-        BlurStrength = 4;
-        EnableCornerGlow = true;
-        EnableTransparency = true;
-        ReflectionIntensity = 75;
-
-        WindowClasses = "aero-bar";
-      };
-
-      "Effect-aeroglide" = {
-        AccurateTilt = true;
-        Duration = 220;
-        InDistance = 28;
-        InRotationAngle = 10;
-        OutDistance = 28;
-        OutRotationAngle = 10;
+      etc."xdg/smodrc".text = lib.generators.toINI {} {
+        Windeco = {
+          DecorationTheme = "Aero";
+          EnableShadow = true;
+          HideIcon = true;
+        };
       };
     };
 
@@ -222,6 +194,10 @@
       displayManager = {
         sessionPackages = [session];
         defaultSession = "aeromoe";
+        sddm = {
+          enable = true;
+          wayland.enable = true;
+        };
       };
 
       keyd = {
@@ -233,11 +209,11 @@
             meta = layer(meta)
 
             [meta:M]
-            enter = command(${run} ${config.environment.sessionVariables.TERMINAL})
-            w = command(${run} ${config.environment.sessionVariables.BROWSER})
+            enter = command(${run config.environment.sessionVariables.TERMINAL})
+            w = command(${run config.environment.sessionVariables.BROWSER})
 
             [meta+shift]
-            r = command(${lib.getExe' pkgs.systemd "systemctl"} reboot)
+            r = command(${systemctl} reboot)
           '';
         };
       };

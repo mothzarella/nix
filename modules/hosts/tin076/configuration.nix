@@ -1,11 +1,11 @@
-{
-  config,
-  secret,
-  ...
-}: let
+{config, ...}: let
   inherit (config.flake.modules) nixos;
 in {
-  flake.modules.nixos.tin076 = {lib, ...}: {
+  flake.modules.nixos.tin076 = {
+    lib,
+    pkgs,
+    ...
+  }: {
     imports = with nixos; [
       aeromoe
       btrfs-rollback
@@ -13,47 +13,32 @@ in {
       preservation
       secure-boot
       tar
+      virtualisation
     ];
+
+    theme.wallpaper = ./wallpaper.webp;
 
     hardware.facter = {
       reportPath = ./facter.json;
       detected.boot.graphics.kernelModules = lib.mkForce ["i915"];
     };
 
-    services.displayManager = {
-      sddm = {
-        enable = true;
-        wayland.enable = true;
-      };
-      autoLogin = {
-        enable = true;
-        user = "tar";
-      };
-    };
+    users.users.tar.packages = with pkgs; [
+      jetbrains.pycharm
+      teams-for-linux
+    ];
 
-    # ------------------------------------------------------------- preservation
-    preservation.preserveAt."/persistent" = {
-      directories = [
-        "/var/lib/AccountsService"
-        "/var/lib/power-profiles-daemon"
-        "/var/lib/systemd/backlight"
-        "/var/lib/systemd/rfkill"
-        "/var/lib/upower"
-        (secret "/var/lib/bluetooth")
-        (secret "/var/lib/iwd")
-      ];
+    # 1739/53184, exposed by i2c as VEN_06CB:00.
+    environment.etc."xdg/kcminputrc".text = lib.mkAfter ''
+      [Libinput][1739][53184][VEN_06CB:00 06CB:CFC0 Touchpad]
+      NaturalScroll=true
+    '';
 
-      users.tar.directories = [
-        "Desktop"
-        "Documents"
-        # "Downloads"
-        "Music"
-        "Pictures"
-        "Public"
-        "Templates"
-        "Videos"
-      ];
-    };
+    preservation.preserveAt."/persistent".users.tar.directories = [
+      ".config/JetBrains"
+      ".local/share/JetBrains"
+      ".config/teams-for-linux"
+    ];
 
     system.stateVersion = "26.11";
   };

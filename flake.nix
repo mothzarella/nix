@@ -16,6 +16,8 @@
     lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
 
     preservation.url = "github:nix-community/preservation";
+
+    llm-agents.url = "github:numtide/llm-agents.nix";
   };
 
   outputs = inputs:
